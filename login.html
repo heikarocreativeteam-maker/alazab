@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تسجيل الدخول — لوحة التحكم</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --gold: #c8a96e;
+            --gold-light: #e2c98a;
+            --gold-dim: rgba(200, 169, 110, 0.15);
+            --bg: #111110;
+            --bg2: #1a1917;
+            --bg3: #222120;
+            --border: rgba(200, 169, 110, 0.2);
+            --text: #f0ece2;
+            --text-muted: #a09890;
+            --danger: #e85a5a;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Noise overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Animated background grid */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(200, 169, 110, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(200, 169, 110, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridDrift 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gridDrift {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 60px 60px;
+            }
+        }
+
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px);
+            animation: pulse 8s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(200, 169, 110, 0.08) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(200, 169, 110, 0.05) 0%, transparent 70%);
+            bottom: -80px;
+            left: -80px;
+            animation-delay: 4s;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        /* ── Card ── */
+        .login-card {
+            position: relative;
+            z-index: 10;
+            width: 420px;
+            max-width: 92vw;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 169, 110, 0.05);
+            animation: cardIn 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) both;
+        }
+
+        @keyframes cardIn {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .card-bar {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+
+        /* ── Header ── */
+        .card-header {
+            padding: 36px 36px 28px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--gold-dim);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon svg {
+            color: var(--gold);
+        }
+
+        .card-header small {
+            display: block;
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .card-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .card-header h1 span {
+            color: var(--gold);
+        }
+
+        /* ── Body ── */
+        .card-body {
+            padding: 28px 36px 36px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 18px;
+        }
+
+        .field label {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        /* ── Input wrapper ── */
+        .input-wrap {
+            position: relative;
+        }
+
+        /* Icon on the RIGHT (inside RTL field) */
+        .input-wrap .field-icon {
+            position: absolute;
+            top: 50%;
+            right: 14px;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: color 0.2s;
+        }
+
+        .input-wrap:focus-within .field-icon {
+            color: var(--gold);
+        }
+
+        /* ── THE FIX: proper padding so text never overlaps icons ── */
+        .field input {
+            width: 100%;
+            padding: 12px 44px 12px 16px;
+            /* right-pad clears the lock/user icon */
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Tajawal', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            direction: rtl;
+        }
+
+        /* Password field also needs left-pad for the eye button */
+        .field input.has-eye {
+            padding-left: 44px;
+        }
+
+        .field input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .field input:focus {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.1);
+        }
+
+        /* ── Eye toggle ── */
+        .eye-btn {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .eye-btn:hover {
+            color: var(--gold);
+        }
+
+        /* ── Error ── */
+        .error-msg {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            background: rgba(232, 90, 90, 0.1);
+            border: 1px solid rgba(232, 90, 90, 0.3);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--danger);
+            margin-bottom: 18px;
+            animation: shake 0.4s ease;
+        }
+
+        .error-msg.show {
+            display: flex;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-6px);
+            }
+
+            40% {
+                transform: translateX(6px);
+            }
+
+            60% {
+                transform: translateX(-4px);
+            }
+
+            80% {
+                transform: translateX(4px);
+            }
+        }
+
+        /* ── Submit ── */
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: var(--gold);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.15s;
+            position: relative;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .btn-login:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-login:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-login .btn-spinner {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto;
+        }
+
+        .btn-login.loading .btn-text {
+            display: none;
+        }
+
+        .btn-login.loading .btn-spinner {
+            display: block;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Footer ── */
+        .card-footer {
+            padding: 16px 36px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .card-footer p {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="login-card">
+        <div class="card-bar"></div>
+
+        <div class="card-header">
+            <div class="logo-icon">
+                <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path
+                        d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+                </svg>
+            </div>
+            <small>Admin Panel</small>
+            <h1>تسجيل <span>الدخول</span></h1>
+        </div>
+
+        <div class="card-body">
+
+            <div class="error-msg" id="error-msg">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4M12 16h.01" />
+                </svg>
+                <span id="error-text">بيانات تسجيل الدخول غير صحيحة</span>
+            </div>
+
+            <!-- Username -->
+            <div class="field">
+                <label for="username">اسم المستخدم</label>
+                <div class="input-wrap">
+                    <input type="text" id="username" placeholder="أدخل اسم المستخدم" autocomplete="username"
+                        autocorrect="off" autocapitalize="none" spellcheck="false">
+                    <svg class="field-icon" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="field">
+                <label for="password">كلمة المرور</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" class="has-eye" placeholder="أدخل كلمة المرور"
+                        autocomplete="current-password">
+                    <svg class="field-icon" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"
+                        viewBox="0 0 24 24">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <button class="eye-btn" type="button" id="eye-btn" onclick="togglePassword()"
+                        aria-label="إظهار/إخفاء كلمة المرور">
+                        <svg id="eye-icon" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"
+                            viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button class="btn-login" id="login-btn" onclick="handleLogin()">
+                <span class="btn-text">دخول</span>
+                <div class="btn-spinner"></div>
+            </button>
+
+        </div>
+
+        <div class="card-footer">
+            <p>لوحة التحكم — مكتب العزب &nbsp;·&nbsp; </p>
+        </div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3000';
+
+        if (localStorage.getItem('adminToken')) verifyAndRedirect();
+
+        async function verifyAndRedirect() {
+            const token = localStorage.getItem('adminToken');
+            try {
+                const res = await fetch(`${API}/auth/me`, {
+                    headers: { Authorization: 'Bearer ' + token }
+                });
+                if (res.ok) window.location.href = 'admin.html';
+                else {
+                    localStorage.removeItem('adminToken');
+                    localStorage.removeItem('adminUser');
+                }
+            } catch { }
+        }
+
+        function togglePassword() {
+            const input = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            icon.innerHTML = isHidden
+                ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
+                : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            document.getElementById('error-text').textContent = msg;
+            el.classList.remove('show');
+            void el.offsetWidth;
+            el.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('error-msg').classList.remove('show');
+        }
+
+        async function handleLogin() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('login-btn');
+
+            hideError();
+
+            if (!username || !password) {
+                showError('الرجاء إدخال اسم المستخدم وكلمة المرور');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.classList.add('loading');
+
+            try {
+                const res = await fetch(`${API}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+                const json = await res.json();
+
+                if (res.ok && json.success) {
+                    localStorage.setItem('adminToken', json.token);
+                    localStorage.setItem('adminUser', JSON.stringify(json.user));
+                    window.location.href = 'index.html';
+                } else {
+                    showError(json.message || 'بيانات تسجيل الدخول غير صحيحة');
+                }
+            } catch {
+                showError('تعذر الاتصال بالخادم، تأكد من تشغيل السيرفر');
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            }
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    </script>
+</body>
+
+</html>
