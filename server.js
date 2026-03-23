@@ -94,6 +94,7 @@ const cvStorage = new CloudinaryStorage({
   params: (req, file) => ({
     folder:          'alazab/cvs',
     resource_type:   'raw',
+    access_mode:     'public',
     allowed_formats: ['pdf'],
     public_id:       Date.now() + '_' + file.originalname.replace(/\s/g, '_'),
   }),
