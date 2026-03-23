@@ -159,17 +159,17 @@ function toInlineUrl(url) {
 // ──────────────────────────────────────────────
 //  ✅ NEWS JSON GENERATOR
 // ──────────────────────────────────────────────
-const NEWS_JSON_PATH = path.join(__dirname, '../alazab/news-data.txt');
-async function updateNewsJson() {
-  try {
-    const news = await News.find({ published: true }).sort({ createdAt: -1 });
-    const payload = JSON.stringify({ success: true, data: news }, null, 2);
-    fs.writeFileSync(NEWS_JSON_PATH, payload, 'utf8');
-    console.log(`✅ news-data.json updated — ${news.length} item(s)`);
-  } catch (err) {
-    console.error('❌ Failed to update news-data.json:', err.message);
-  }
-}
+// const NEWS_JSON_PATH = path.join(__dirname, '../alazab/news-data.txt');
+// async function updateNewsJson() {
+//   try {
+//     const news = await News.find({ published: true }).sort({ createdAt: -1 });
+//     const payload = JSON.stringify({ success: true, data: news }, null, 2);
+//     fs.writeFileSync(NEWS_JSON_PATH, payload, 'utf8');
+//     console.log(`✅ news-data.json updated — ${news.length} item(s)`);
+//   } catch (err) {
+//     console.error('❌ Failed to update news-data.json:', err.message);
+//   }
+// }
 
 // ──────────────────────────────────────────────
 //  MongoDB
@@ -177,7 +177,7 @@ async function updateNewsJson() {
 connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
-    updateNewsJson();
+    // updateNewsJson();
   })
   .catch(err => console.error('❌ MongoDB error:', err));
 
@@ -356,7 +356,7 @@ app.post('/news', authenticate, upload.single('image'), async (req, res) => {
       title: title_ar, body: body_ar,
       imageUrl, published: published !== 'false',
     }).save();
-    await updateNewsJson();
+    // await updateNewsJson();
     res.status(201).json({ success: true, message: 'تم إضافة الخبر بنجاح', data: news });
   } catch (err) {
     console.error(err);
@@ -385,7 +385,7 @@ app.patch('/news/:id', authenticate, upload.single('image'), async (req, res) =>
     }
     const news = await News.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!news) return res.status(404).json({ success: false, message: 'الخبر غير موجود' });
-    await updateNewsJson();
+    // await updateNewsJson();
     res.json({ success: true, data: news });
   } catch { res.status(500).json({ success: false, message: 'Server error' }); }
 });
@@ -400,7 +400,7 @@ app.delete('/news/:id', authenticate, async (req, res) => {
       const publicId = getPublicId(news.imageUrl);
       if (publicId) await cloudinary.uploader.destroy(publicId);
     }
-    await updateNewsJson();
+    // await updateNewsJson();
     res.json({ success: true, message: 'تم حذف الخبر' });
   } catch { res.status(500).json({ success: false, message: 'Server error' }); }
 });
