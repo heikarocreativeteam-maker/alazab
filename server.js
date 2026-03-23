@@ -505,6 +505,25 @@ app.patch('/faq/:id/status', authenticate, async (req, res) => {
 // ──────────────────────────────────────────────
 //  JOIN routes
 // ──────────────────────────────────────────────
+
+
+// ✅ Generate signed URL for CV
+app.get('/cv/:publicId', authenticate, async (req, res) => {
+  try {
+    const signedUrl = cloudinary.utils.private_download_url(
+      req.params.publicId,
+      'pdf',
+      { resource_type: 'raw', expires_at: Math.floor(Date.now() / 1000) + 3600 }
+    );
+    res.json({ success: true, url: signedUrl });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+
+
 app.post('/join', formLimiter, uploadCV.single('cv'), async (req, res) => {
   try {
     const { firstName, lastName, phone, email, details, country } = req.body;
