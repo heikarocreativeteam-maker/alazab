@@ -57,6 +57,7 @@ const formLimiter = rateLimit({
 });
 
 // طبّق الـ global على كل الـ app
+app.set('trust proxy', 1); // ← أضفه هنا
 app.use(globalLimiter);
 
 
@@ -104,7 +105,7 @@ const cvStorage = new CloudinaryStorage({
 
 const uploadCV = multer({
   storage: cvStorage,
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
 // ──────────────────────────────────────────────
