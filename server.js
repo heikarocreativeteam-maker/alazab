@@ -111,13 +111,17 @@ const uploadCV = multer({
 // ──────────────────────────────────────────────
 //  Cloudinary Storage — المرفقات
 // ──────────────────────────────────────────────
+// ✅ 
 const attachmentStorage = new CloudinaryStorage({
   cloudinary,
-  params: (req, file) => ({
-    folder:        'alazab/attachments',
-    resource_type: /\.(jpe?g|png|gif)$/i.test(file.originalname) ? 'image' : 'raw',
-    allowed_formats: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'txt'],
-  }),
+  params: (req, file) => {
+    const isImage = /\.(jpe?g|png|gif|webp)$/i.test(file.originalname);
+    return {
+      folder: 'alazab/attachments',
+      resource_type: isImage ? 'image' : 'raw',
+      allowed_formats: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'txt'],
+    };
+  },
 });
 
 const uploadAttachment = multer({
