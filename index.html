@@ -176,6 +176,29 @@
       border-right: 3px solid transparent;
     }
 
+    /* منع الجدول من الطفح */
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      min-width: 900px;
+    }
+
+    /* تحديد عرض أقصى للـ columns الطويلة */
+    #contact-tbody td:nth-child(5) {
+      /* التفاصيل */
+      max-width: 180px;
+    }
+
+    #contact-tbody td:nth-child(3) {
+      /* الإيميل */
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .nav-item:hover {
       color: var(--text);
       background: var(--gold-dim);
@@ -566,6 +589,15 @@
       white-space: nowrap;
       color: var(--text);
       font-size: 14px;
+    }
+
+    /* ── التفاصيل في الجدول: أول كلمتين فقط ── */
+    .details-text {
+      max-width: 120px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+      display: block;
     }
 
     td .date {
@@ -1418,7 +1450,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const API = 'http://localhost:3000';
+    const API = 'https://alazab.onrender.com';
 
     function getToken() { return localStorage.getItem('adminToken'); }
 
@@ -1550,8 +1582,9 @@
           ? `<span class="badge badge-join">انضمام</span>`
           : `<span class="badge badge-contact">استفسار</span>`;
 
+        // بعد ✅
         const cvCell = isJoin && item.cvUrl
-          ? `<a class="cv-link" href="${esc(resolveUrl(item.cvUrl))}" target="_blank" onclick="event.stopPropagation()">📄 CV</a>`
+          ? `<a class="cv-link" href="${esc(resolveUrl(item.cvUrl))}" target="_blank" onclick="event.stopPropagation(); openCV('${item.cvUrl}')">📄 CV</a>`
           : `<span style="color:var(--text-muted);font-size:12px;">—</span>`;
 
         const attachCell = item.attachmentUrl
@@ -1565,7 +1598,7 @@
           <td><span class="name">${esc(item.firstName)} ${esc(item.lastName)}</span></td>
           <td><a class="email-link" href="mailto:${esc(item.email)}" onclick="event.stopPropagation()">${esc(item.email)}</a></td>
           <td><span class="phone">${esc(item.phone)}</span></td>
-          <td><span class="details-text">${details}</span></td>
+          <td style="max-width:220px;"><span class="details-text">${details}</span></td>
           <td>${cvCell}</td>
           <td>${attachCell}</td>
           <td><span class="date">${formatDate(item.createdAt)}</span></td>
@@ -1623,8 +1656,7 @@
         tr.innerHTML = `
           <td><span class="name">${esc(item.fullName)}</span></td>
           <td><a class="email-link" href="mailto:${esc(item.email)}" onclick="event.stopPropagation()">${esc(item.email)}</a></td>
-          <td><span class="details-text">${esc(item.question)}</span></td>
-          <td><span class="badge badge-${item.status}">${isPending ? 'بانتظار الرد' : 'تمت الإجابة'}</span></td>
+<td style="max-width:220px;"><span class="details-text">${esc(item.question)}</span></td>          <td><span class="badge badge-${item.status}">${isPending ? 'بانتظار الرد' : 'تمت الإجابة'}</span></td>
           <td>${attachCell}</td>
           <td><span class="date">${formatDate(item.createdAt)}</span></td>
           <td>${isPending
@@ -1660,7 +1692,9 @@
         <div class="modal-row"><label>البريد الإلكتروني</label><p><a class="email-link" href="mailto:${esc(item.email)}">${esc(item.email)}</a></p></div>
         <div class="modal-row"><label>رقم الهاتف</label><p style="direction:ltr;text-align:right;">${esc(item.phone)}</p></div>
         <div class="modal-row"><label>التاريخ</label><p>${formatDate(item.createdAt)}</p></div>
-        <div class="modal-row"><label>التفاصيل</label><p>${esc(item.details)}</p></div>
+<div class="modal-row"><label>التفاصيل</label>
+  <p style="white-space:pre-wrap; word-break:break-word; line-height:1.8;">${esc(item.details)}</p>
+</div>
         ${item.attachmentUrl ? `<div class="modal-row"><label>المرفق</label><p>${buildAttachBlock(item.attachmentUrl)}</p></div>` : ''}
       `;
       document.getElementById('modal-overlay').classList.add('open');
@@ -1676,8 +1710,10 @@
         <div class="modal-row"><label>رقم الهاتف</label><p style="direction:ltr;text-align:right;">${esc(item.phone)}</p></div>
         ${item.country ? `<div class="modal-row"><label>البلد</label><p>${esc(item.country)}</p></div>` : ''}
         <div class="modal-row"><label>التاريخ</label><p>${formatDate(item.createdAt)}</p></div>
-        <div class="modal-row"><label>التفاصيل</label><p>${esc(item.details)}</p></div>
-        ${item.cvUrl ? `<div class="modal-row"><label>السيرة الذاتية</label><p><a class="cv-link" href="${esc(resolveUrl(item.cvUrl))}" target="_blank">📄 تحميل CV</a></p></div>` : ''}
+        <div class="modal-row"><label>التفاصيل</label>
+  <p style="white-space:pre-wrap; word-break:break-word; line-height:1.8;">${esc(item.details)}</p>
+</div>
+        ${item.cvUrl ? `<div class="modal-row"><label>السيرة الذاتية</label><p><a class="cv-link" href="https://docs.google.com/viewer?url=${encodeURIComponent(resolveUrl(item.cvUrl))}" target="_blank">📄 عرض CV</a></p></div>` : ''}
         ${item.attachmentUrl ? `<div class="modal-row"><label>المرفق</label><p>${buildAttachBlock(item.attachmentUrl)}</p></div>` : ''}
       `;
       document.getElementById('modal-overlay').classList.add('open');
@@ -1782,6 +1818,16 @@
       document.getElementById('nf-cancel-btn').style.display = 'inline-flex';
       document.getElementById('news-form-wrap').style.display = 'block';
       document.getElementById('news-form-wrap').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // أضف function جديدة
+    async function openCV(cvUrl) {
+      try {
+        const publicId = cvUrl.split('/raw/upload/').pop().replace(/\.[^/.]+$/, '');
+        const res = await authFetch(`${API}/cv/${encodeURIComponent(publicId)}`);
+        const json = await res.json();
+        if (json.url) window.open(json.url, '_blank');
+      } catch { showToast('❌ تعذر فتح الـ CV'); }
     }
 
     function cancelEdit() { editingNewsId = null; document.getElementById('news-form-wrap').style.display = 'none'; }
@@ -1896,9 +1942,16 @@
 
     // لو الـ URL ناقص (مثلاً /uploads/file.pdf) → كمّله بـ API base
     // لو كامل (يبدأ بـ http) → اتركه زي ما هو
+    // بعد ✅
     function resolveUrl(url) {
       if (!url) return '';
-      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        // لو Cloudinary PDF → خلّيه يتحمل مباشرة
+        if (url.includes('cloudinary.com') && url.includes('/raw/upload/')) {
+          return url.replace('/raw/upload/', '/raw/upload/fl_attachment/');
+        }
+        return url;
+      }
       return API + (url.startsWith('/') ? url : '/' + url);
     }
 
