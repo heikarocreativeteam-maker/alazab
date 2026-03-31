@@ -124,9 +124,20 @@ const attachmentStorage = new CloudinaryStorage({
   cloudinary,
   params: (req, file) => {
     const isImage = /\.(jpe?g|png|gif|webp)$/i.test(file.originalname);
+    
+    // ✅ حدد الـ Content-Type الصح لكل نوع
+    const mimeTypes = {
+      '.pdf':  'application/pdf',
+      '.doc':  'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.txt':  'text/plain',
+    };
+    const ext = file.originalname.match(/\.[^.]+$/)?.[0]?.toLowerCase();
+    
     return {
       folder: 'alazab/attachments',
       resource_type: isImage ? 'image' : 'raw',
+      ...(mimeTypes[ext] && { content_type: mimeTypes[ext] }),
     };
   },
 });
