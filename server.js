@@ -1,12 +1,12 @@
 import express, { json } from 'express';
 import { connect, Schema, model } from 'mongoose';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
+import fetch from 'node-fetch';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { v2 as cloudinary } from 'cloudinary';
@@ -15,14 +15,27 @@ import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app = express();
 app.use(json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://www.alazab.net',
+    'https://alazab.net',
+  ],
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 
 // ──────────────────────────────────────────────
@@ -134,29 +147,29 @@ const uploadAttachment = multer({
 // ──────────────────────────────────────────────
 function getPublicId(url) {
   try {
-    // مثال: https://res.cloudinary.com/xxx/image/upload/v123/alazab/news/filename.jpg
-    // نريد: alazab/news/filename
     const parts = url.split('/');
     const uploadIndex = parts.indexOf('upload');
-    // نشيل الـ version (v123456) لو موجود
+    if (uploadIndex === -1) return null;
+
     const afterUpload = parts.slice(uploadIndex + 1);
+
+    // شيل الـ version (v123456) لو موجود
     if (afterUpload[0]?.startsWith('v') && /^v\d+$/.test(afterUpload[0])) {
       afterUpload.shift();
     }
+
     const withExt = afterUpload.join('/');
-    return withExt.replace(/\.[^/.]+$/, ''); // شيل الـ extension
+
+    // ✅ لو raw file (PDF) — خلي الـ extension موجود
+    const isRaw = url.includes('/raw/upload/');
+    if (isRaw) return withExt;
+
+    // ✅ صورة — شيل الـ extension
+    return withExt.replace(/\.[^/.]+$/, '');
   } catch {
     return null;
   }
 }
-
-function toInlineUrl(url) {
-  if (!url) return '';
-  // ✅ Google Docs Viewer بيفتح أي PDF في المتصفح
-  return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
-}
-
-
 
 
 
@@ -175,15 +188,6 @@ function toInlineUrl(url) {
 //   }
 // }
 
-// ──────────────────────────────────────────────
-//  MongoDB
-// ──────────────────────────────────────────────
-connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected');
-    // updateNewsJson();
-  })
-  .catch(err => console.error('❌ MongoDB error:', err));
 
 // ──────────────────────────────────────────────
 //  Schemas & Models
@@ -237,6 +241,30 @@ const JoinApplication = model('JoinApplication', new Schema({
   attachmentUrl: { type: String, default: '' },
   createdAt:     { type: Date, default: Date.now },
 }));
+
+
+// ──────────────────────────────────────────────
+//  Seed helper
+// ──────────────────────────────────────────────
+connect(process.env.MONGO_URI)
+  .then(async () => {
+    console.log('✅ MongoDB connected');
+
+    if (process.env.SEED_ADMIN === 'true') {
+      const exists = await AdminUser.findOne({ username: process.env.SEED_USERNAME });
+      if (!exists) {
+        const hashed = await bcrypt.hash(process.env.SEED_PASSWORD, 12);
+        await new AdminUser({ username: process.env.SEED_USERNAME, password: hashed }).save();
+        console.log(`✅ Admin created: ${process.env.SEED_USERNAME}`);
+      } else {
+        console.log('ℹ️  Admin already exists.');
+      }
+    }
+  })
+  .catch(err => console.error('❌ MongoDB error:', err));
+
+
+
 
 // ──────────────────────────────────────────────
 //  JWT helpers
@@ -311,22 +339,6 @@ app.patch('/auth/change-password', authenticate, async (req, res) => {
   } catch { res.status(500).json({ success: false, message: 'Server error' }); }
 });
 
-// ──────────────────────────────────────────────
-//  Seed helper
-// ──────────────────────────────────────────────
-if (process.env.SEED_ADMIN === 'true') {
-  connect(process.env.MONGO_URI).then(async () => {
-    const exists = await AdminUser.findOne({ username: process.env.SEED_USERNAME });
-    if (!exists) {
-      const hashed = await bcrypt.hash(process.env.SEED_PASSWORD, 12);
-      await new AdminUser({ username: process.env.SEED_USERNAME, password: hashed }).save();
-      console.log(`✅ Admin created: ${process.env.SEED_USERNAME}`);
-    } else {
-      console.log('ℹ️  Admin already exists.');
-    }
-    process.exit(0);
-  });
-}
 
 // ──────────────────────────────────────────────
 //  NEWS routes
@@ -384,7 +396,7 @@ app.patch('/news/:id', authenticate, upload.single('image'), async (req, res) =>
       const old = await News.findById(req.params.id);
       if (old?.imageUrl) {
         const publicId = getPublicId(old.imageUrl);
-        if (publicId) await cloudinary.uploader.destroy(publicId);
+        if (publicId) await cloudinary.uploader.destroy(publicId , { resource_type: 'image' });
       }
     }
     const news = await News.findByIdAndUpdate(req.params.id, update, { new: true });
@@ -402,7 +414,7 @@ app.delete('/news/:id', authenticate, async (req, res) => {
     // ✅ امسح الصورة من Cloudinary
     if (news.imageUrl) {
       const publicId = getPublicId(news.imageUrl);
-      if (publicId) await cloudinary.uploader.destroy(publicId);
+      if (publicId) await cloudinary.uploader.destroy(publicId , { resource_type: 'image' });
     }
     // await updateNewsJson();
     res.json({ success: true, message: 'تم حذف الخبر' });
@@ -422,8 +434,10 @@ app.post('/contact', formLimiter, uploadAttachment.single('attachment'), async (
     const attachLine = attachmentUrl
       ? `<tr><td style="color:#888;">المرفق</td><td><a href="${attachmentUrl}">تحميل الملف</a></td></tr>`
       : '';
-    await resend.emails.send({
-      from: 'نظام الاستفسارات <onboarding@resend.dev>', to: process.env.OFFICE_EMAIL, replyTo: email,
+    await  transporter.sendMail({
+  from: process.env.GMAIL_USER,
+  to: process.env.OFFICE_EMAIL,
+  replyTo: email,
       subject: 'استفسار جديد وصل للمكتب',
       html: `<div dir="rtl" style="font-family:Arial;max-width:600px;margin:auto;border:1px solid #c8a96e;border-radius:8px;overflow:hidden;">
                <div style="background:#2b2b2b;padding:20px;text-align:center;"><h2 style="color:#c8a96e;margin:0;">استفسار جديد</h2></div>
@@ -465,8 +479,10 @@ app.post('/faq', formLimiter, uploadAttachment.single('attachment'), async (req,
     const attachLine = attachmentUrl
       ? `<p><a href="${attachmentUrl}" style="background:#c8a96e;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;">📎 تحميل المرفق</a></p>`
       : '';
-    await resend.emails.send({
-      from: 'نظام الأسئلة الشائعة <onboarding@resend.dev>', to: process.env.OFFICE_EMAIL, replyTo: email,
+    await transporter.sendMail({
+  from: process.env.GMAIL_USER,
+  to: process.env.OFFICE_EMAIL,
+  replyTo: email,
       subject: 'سؤال جديد من صفحة الأسئلة الشائعة',
       html: `<div dir="rtl" style="font-family:Arial;max-width:600px;margin:auto;border:1px solid #c8a96e;border-radius:8px;overflow:hidden;">
                <div style="background:#2b2b2b;padding:20px;text-align:center;"><h2 style="color:#c8a96e;margin:0;">سؤال جديد</h2></div>
@@ -537,8 +553,10 @@ app.post('/join', formLimiter, uploadCV.single('cv'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'يرجى رفع السيرة الذاتية' });
 const cvUrl = req.file.path; 
     const application = await new JoinApplication({ firstName, lastName, phone, email, details, country, cvUrl }).save();
-    await resend.emails.send({
-      from: 'نظام الانضمام <onboarding@resend.dev>', to: process.env.OFFICE_EMAIL, replyTo: email,
+    await transporter.sendMail({
+      from: process.env.GMAIL_USER,
+      to: process.env.OFFICE_EMAIL,
+      replyTo: email,
       subject: 'طلب انضمام جديد',
       html: `<div dir="rtl" style="font-family:Arial;max-width:600px;margin:auto;border:1px solid #c8a96e;border-radius:8px;overflow:hidden;">
                <div style="background:#2b2b2b;padding:20px;text-align:center;"><h2 style="color:#c8a96e;margin:0;">طلب انضمام جديد</h2></div>
