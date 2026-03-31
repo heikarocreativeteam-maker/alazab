@@ -430,7 +430,7 @@ app.post('/contact', formLimiter, uploadAttachment.single('attachment'), async (
       ? `<tr><td style="color:#888;">المرفق</td><td><a href="${attachmentUrl}">تحميل الملف</a></td></tr>`
       : '';
     await resend.emails.send({
-  from: 'onboarding@resend.dev', // أو دومينك لو verified
+from: 'noreply@alazab.net',
   to: process.env.OFFICE_EMAIL,
   reply_to: email,
       subject: 'استفسار جديد وصل للمكتب',
@@ -475,7 +475,7 @@ app.post('/faq', formLimiter, uploadAttachment.single('attachment'), async (req,
       ? `<p><a href="${attachmentUrl}" style="background:#c8a96e;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;">📎 تحميل المرفق</a></p>`
       : '';
    await resend.emails.send({
-  from: 'onboarding@resend.dev', // أو دومينك لو verified
+from: 'noreply@alazab.net',
   to: process.env.OFFICE_EMAIL,
   reply_to: email,
       subject: 'سؤال جديد من صفحة الأسئلة الشائعة',
@@ -549,7 +549,7 @@ app.post('/join', formLimiter, uploadCV.single('cv'), async (req, res) => {
 const cvUrl = req.file.path; 
     const application = await new JoinApplication({ firstName, lastName, phone, email, details, country, cvUrl }).save();
 await resend.emails.send({
-  from: 'onboarding@resend.dev', // أو دومينك لو verified
+from: 'noreply@alazab.net',
   to: process.env.OFFICE_EMAIL,
   reply_to: email,
       subject: 'طلب انضمام جديد',
