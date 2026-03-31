@@ -1,6 +1,6 @@
 import express, { json } from 'express';
 import { connect, Schema, model } from 'mongoose';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import fetch from 'node-fetch';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -15,13 +15,8 @@ import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -434,10 +429,10 @@ app.post('/contact', formLimiter, uploadAttachment.single('attachment'), async (
     const attachLine = attachmentUrl
       ? `<tr><td style="color:#888;">المرفق</td><td><a href="${attachmentUrl}">تحميل الملف</a></td></tr>`
       : '';
-    await  transporter.sendMail({
-  from: process.env.GMAIL_USER,
+    await resend.emails.send({
+  from: 'onboarding@resend.dev', // أو دومينك لو verified
   to: process.env.OFFICE_EMAIL,
-  replyTo: email,
+  reply_to: email,
       subject: 'استفسار جديد وصل للمكتب',
       html: `<div dir="rtl" style="font-family:Arial;max-width:600px;margin:auto;border:1px solid #c8a96e;border-radius:8px;overflow:hidden;">
                <div style="background:#2b2b2b;padding:20px;text-align:center;"><h2 style="color:#c8a96e;margin:0;">استفسار جديد</h2></div>
@@ -479,10 +474,10 @@ app.post('/faq', formLimiter, uploadAttachment.single('attachment'), async (req,
     const attachLine = attachmentUrl
       ? `<p><a href="${attachmentUrl}" style="background:#c8a96e;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;">📎 تحميل المرفق</a></p>`
       : '';
-    await transporter.sendMail({
-  from: process.env.GMAIL_USER,
+   await resend.emails.send({
+  from: 'onboarding@resend.dev', // أو دومينك لو verified
   to: process.env.OFFICE_EMAIL,
-  replyTo: email,
+  reply_to: email,
       subject: 'سؤال جديد من صفحة الأسئلة الشائعة',
       html: `<div dir="rtl" style="font-family:Arial;max-width:600px;margin:auto;border:1px solid #c8a96e;border-radius:8px;overflow:hidden;">
                <div style="background:#2b2b2b;padding:20px;text-align:center;"><h2 style="color:#c8a96e;margin:0;">سؤال جديد</h2></div>
@@ -553,10 +548,10 @@ app.post('/join', formLimiter, uploadCV.single('cv'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'يرجى رفع السيرة الذاتية' });
 const cvUrl = req.file.path; 
     const application = await new JoinApplication({ firstName, lastName, phone, email, details, country, cvUrl }).save();
-    await transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to: process.env.OFFICE_EMAIL,
-      replyTo: email,
+await resend.emails.send({
+  from: 'onboarding@resend.dev', // أو دومينك لو verified
+  to: process.env.OFFICE_EMAIL,
+  reply_to: email,
       subject: 'طلب انضمام جديد',
       html: `<div dir="rtl" style="font-family:Arial;max-width:600px;margin:auto;border:1px solid #c8a96e;border-radius:8px;overflow:hidden;">
                <div style="background:#2b2b2b;padding:20px;text-align:center;"><h2 style="color:#c8a96e;margin:0;">طلب انضمام جديد</h2></div>
