@@ -127,7 +127,6 @@ const attachmentStorage = new CloudinaryStorage({
     return {
       folder: 'alazab/attachments',
       resource_type: isImage ? 'image' : 'raw',
-      allowed_formats: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif', 'txt'],
     };
   },
 });
@@ -135,6 +134,14 @@ const attachmentStorage = new CloudinaryStorage({
 const uploadAttachment = multer({
   storage: attachmentStorage,
   limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = /\.(pdf|doc|docx|jpg|jpeg|png|gif|txt|webp)$/i;
+    if (allowed.test(file.originalname)) {
+      cb(null, true);
+    } else {
+      cb(new Error('نوع الملف غير مسموح'), false);
+    }
+  },
 });
 
 // ──────────────────────────────────────────────
